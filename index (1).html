@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>NYC Shop Cats</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.js"></script>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .header {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .header h1 {
+        margin: 0;
+        font-family: 'Open Sans', sans-serif;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      .marker {
+        display: block;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        padding: 0;
+      }
+      .mapboxgl-popup {
+        max-width: 300px;
+      }
+      .mapboxgl-popup-content {
+        text-align: left;
+        font-family: 'Open Sans', sans-serif;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        border: none;
+        padding: 15px;
+      }
+      .popup-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        align-items: baseline;
+      }
+      .popup-label {
+        font-weight: bold;
+        color: #555;
+        margin-right: 10px;
+      }
+      .popup-value {
+        text-align: right;
+        flex: 1;
+        color: #333;
+      }
+      .popup-title {
+        text-align: center;
+        margin-bottom: 12px;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 8px;
+      }
+      .hunter-gatherer-scale {
+        margin-top: 10px;
+        position: relative;
+      }
+      .scale-bar {
+        height: 20px;
+        border-radius: 10px;
+        border: 2px solid #333;
+        background: linear-gradient(to right, #00ff00 0%, #ff0000 100%);
+        position: relative;
+        margin-bottom: 5px;
+      }
+      .scale-triangle {
+        position: absolute;
+        bottom: -8px;
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 10px solid #333;
+        transform: translateX(-50%);
+      }
+      .scale-numbers {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: #333;
+        margin-top: 2px;
+        font-weight: bold;
+      }
+      .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: #666;
+        margin-top: 2px;
+      }
+      .rating-number {
+        position: absolute;
+        bottom: -25px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #333;
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🐱 NYC Bodega Cats</h1>
+    </div>
+    <div id="map"></div>
+    <script>
+      mapboxgl.accessToken = 'pk.eyJ1IjoidGF5bG9ybGNvY2hyYW4iLCJhIjoiY2p0amplNTB6MDdsajQ0bXYyaDNkY3R3OCJ9.-FzAtcByEPtKtpSL-aofEA';
+
+      const geojson = {
+        'type': 'FeatureCollection',
+       'features': [
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Kiki',
+             'jobTitle': 'Mouse Hunter',
+             'imageUrl': 'https://i.imgur.com/4Gbiauy_d.png?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'Crown Heights',
+             'streetAddress': '137 Kingston Ave',
+             'shop': 'Stop Four Deli',
+             'hunterOrGatherer': '8.5',
+             'gender': 'She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.9414598952162, 40.6752209134712]
+           }
+         },
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Lucky',
+             'jobTitle': 'Cat Mayor of NYC',
+             'imageUrl': 'https://i.imgur.com/PbJeIc7_d.png?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'The Bronx',
+             'streetAddress': '3004 Middletown Rd',
+             'shop': 'Third Eye Throwbacks',
+             'hunterOrGatherer': '6.5',
+             'gender': 'She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.8299851889422, 40.8437930448237]
+           }
+         },
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Mia Garfield',
+             'jobTitle': 'Shop Gremlin',
+             'imageUrl': 'https://i.imgur.com/3oVYx4C_d.png?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'Upper East Side',
+             'streetAddress': '1310 2nd Ave',
+             'shop': 'Fresh Food Farm',
+             'hunterOrGatherer': '0',
+             'gender': 'She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.9596438051797, 40.7667005869324]
+           }
+         },
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Spicy & Gigi',
+             'jobTitle': 'Store Greeter & Security',
+             'imageUrl': 'https://i.imgur.com/30EkovH_d.jpeg?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'East Village',
+             'streetAddress': '196 1st Ave',
+             'shop': 'Manhattan Market Place',
+             'hunterOrGatherer': '10, 3',
+             'gender': 'She & She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.9833486386434, 40.7298305672042]
+           }
+         },
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Lucky (UES)',
+             'jobTitle': 'Shop Gremlin',
+             'imageUrl': 'https://i.imgur.com/3oVYx4C_d.png?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'Upper East Side',
+             'streetAddress': '1310 2nd Ave',
+             'shop': 'Fresh Food Farm',
+             'hunterOrGatherer': '0',
+             'gender': 'She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.9596438051797, 40.7667005869324]
+           }
+         },
+         {
+           'type': 'Feature',
+           'properties': {
+             'name': 'Lulu',
+             'jobTitle': 'Local Diva',
+             'imageUrl': 'https://i.imgur.com/LL12aq4_d.png?maxwidth=520&shape=thumb&fidelity=high',
+             'borough': 'Ridgewood',
+             'streetAddress': '66-57 60th Pl',
+             'shop': 'E & U Grill & Deli Corp',
+             'hunterOrGatherer': '1',
+             'gender': 'She',
+             'iconSize': [60, 60]
+           },
+           'geometry': {
+             'type': 'Point',
+             'coordinates': [-73.9304883601293, 40.6730278569369]
+           }
+          },
+            {
+              'type': 'Feature',
+              'properties': {
+                'name': 'Pumpkin',
+                'jobTitle': 'Michelladonna\'s Daughter',
+                'imageUrl': 'https://i.imgur.com/yYeqkim_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                'borough': 'Williamsburg',
+                'streetAddress': '127 Grand St',
+                'shop': 'Rodriguez Deli',
+                'hunterOrGatherer': '10',
+                'gender': 'She',
+                'iconSize': [60, 60]
+              },
+              'geometry': {
+                'type': 'Point',
+                'coordinates': [-73.9625199, 40.71515541]
+              }
+            },
+              {
+                'type': 'Feature',
+                'properties': {
+                  'name': 'Ashley',
+                  'jobTitle': 'Security',
+                  'imageUrl': 'https://i.imgur.com/X96W6WH_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                  'borough': 'Williamsburg',
+                  'streetAddress': '236 Berry St',
+                  'shop': 'Berry Organic Market',
+                  'hunterOrGatherer': '6',
+                  'gender': 'She',
+                  'iconSize': [60, 60]
+                },
+                'geometry': {
+                  'type': 'Point',
+                  'coordinates': [-73.9627598202521, 40.7152675213595]
+                }
+              },
+                {
+                  'type': 'Feature',
+                  'properties': {
+                    'name': 'Simcoe',
+                    'jobTitle': 'The Boss',
+                    'imageUrl': 'https://i.imgur.com/AL14HD3_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                    'borough': 'East Williamsburg',
+                    'streetAddress': '990 Metropolitan Ave',
+                    'shop': 'Grimm Artisan Ales',
+                    'hunterOrGatherer': '7',
+                    'gender': 'She',
+                    'iconSize': [60, 60]
+                  },
+                  'geometry': {
+                    'type': 'Point',
+                    'coordinates': [-73.9364333163913, 40.7144143818608]
+                  }
+                },
+                  {
+                    'type': 'Feature',
+                    'properties': {
+                      'name': 'Ice Spice',
+                      'jobTitle': 'Store Guardian',
+                      'imageUrl': 'https://i.imgur.com/ESJjGA8_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                      'borough': 'Fort Greene',
+                      'streetAddress': '19 Greene Ave',
+                      'shop': 'Greene Deli',
+                      'hunterOrGatherer': '10',
+                      'gender': 'She',
+                      'iconSize': [60, 60]
+                    },
+                    'geometry': {
+                      'type': 'Point',
+                      'coordinates': [-73.97257376804043, 40.68605664493582]
+                    }
+                  },
+                    {
+                      'type': 'Feature',
+                      'properties': {
+                        'name': 'Tutu',
+                        'jobTitle': 'Cold Cut Specialist',
+                        'imageUrl': 'https://i.imgur.com/oHkIn6z_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                        'borough': 'Park Slope',
+                        'streetAddress': '169A Utica Ave',
+                        'shop': 'Yamco Deli Inc.',
+                        'hunterOrGatherer': '6.5',
+                        'gender': 'She',
+                        'iconSize': [60, 60]
+                      },
+                      'geometry': {
+                        'type': 'Point',
+                        'coordinates': [-73.93059246150011, 40.67309161454408]
+                      }
+                    },
+                      {
+                        'type': 'Feature',
+                        'properties': {
+                          'name': 'Smokey',
+                          'jobTitle': 'Boss (MVB)',
+                          'imageUrl': 'https://i.imgur.com/aIJZa9A_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                          'borough': 'Bed-Stuy',
+                          'streetAddress': '1254 Broadway',
+                          'shop': 'Tasty Gourmet and Deli',
+                          'hunterOrGatherer': '6',
+                          'gender': 'She',
+                          'iconSize': [60, 60]
+                        },
+                        'geometry': {
+                          'type': 'Point',
+                          'coordinates': [-73.92549503667024, 40.691251239563805]
+                        }
+                      },
+                        {
+                          'type': 'Feature',
+                          'properties': {
+                            'name': 'Jeremy',
+                            'jobTitle': 'Operations Manager',
+                            'imageUrl': 'https://i.imgur.com/kIepBk5_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                            'borough': 'Chelsea',
+                            'streetAddress': '168 8th Ave',
+                            'shop': 'Citipups',
+                            'hunterOrGatherer': '7',
+                            'gender': 'He',
+                            'iconSize': [60, 60]
+                          },
+                          'geometry': {
+                            'type': 'Point',
+                            'coordinates': [-74.0003777352915, 40.7423884540513]
+                          }
+                        },
+                          {
+                            'type': 'Feature',
+                            'properties': {
+                              'name': 'Melissa',
+                              'jobTitle': 'Director of Napping',
+                              'imageUrl': 'https://i.imgur.com/jneesOU_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                              'borough': 'Crown Heights',
+                              'streetAddress': '125 Kingston Ave',
+                              'shop': 'Classic Deli',
+                              'hunterOrGatherer': '7.5',
+                              'gender': 'She',
+                              'iconSize': [60, 60]
+                            },
+                            'geometry': {
+                              'type': 'Point',
+                              'coordinates': [-73.9414523526355, 40.67596223328162]
+                            }
+                          },
+                            {
+                              'type': 'Feature',
+                              'properties': {
+                                'name': 'Mr. Hyde, RIP Dr. Jekyll',
+                                'jobTitle': 'Head of Workplace Apathy',
+                                'imageUrl': 'https://i.imgur.com/OfYeqer_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                'borough': 'Flatiron District',
+                                'streetAddress': '19 W 21st St',
+                                'shop': 'Abracadabra',
+                                'hunterOrGatherer': '0',
+                                'gender': 'He',
+                                'iconSize': [60, 60]
+                              },
+                              'geometry': {
+                                'type': 'Point',
+                                'coordinates': [-73.9919119246310, 40.7409887898346]
+                              }
+                            },
+                              {
+                                'type': 'Feature',
+                                'properties': {
+                                  'name': 'Casper',
+                                  'jobTitle': 'Head of Moral',
+                                  'imageUrl': 'https://i.imgur.com/UyApdZU_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                  'borough': 'East Williamsburg',
+                                  'streetAddress': '74 Ingraham St',
+                                  'shop': 'Object Fabrication',
+                                  'hunterOrGatherer': '8',
+                                  'gender': 'He',
+                                  'iconSize': [60, 60]
+                                },
+                                'geometry': {
+                                  'type': 'Point',
+                                  'coordinates': [-73.9306915003474, 40.7071268604765]
+                                }
+                              },
+                                {
+                                  'type': 'Feature',
+                                  'properties': {
+                                    'name': 'Silver aka. Bobby',
+                                    'jobTitle': 'Local Huntsman',
+                                    'imageUrl': 'https://i.imgur.com/JyXVMc1_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                    'borough': 'Upper East Side',
+                                    'streetAddress': '1492 York Ave',
+                                    'shop': 'York Deli',
+                                    'hunterOrGatherer': '10',
+                                    'gender': 'He',
+                                    'iconSize': [60, 60]
+                                  },
+                                  'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [-73.9503838245565, 40.7711019268643]
+                                  }
+                                },
+                                  {
+                                  'type': 'Feature',
+                                  'properties': {
+                                    'name': 'Stella',
+                                    'jobTitle': 'Classical Music Enthusiast',
+                                    'imageUrl': 'https://i.imgur.com/I1NicB5_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                    'borough': 'Gowanus',
+                                    'streetAddress': '246 11th St',
+                                    'shop': '4th Ave Convenience',
+                                    'hunterOrGatherer': '9',
+                                    'gender': 'He',
+                                    'iconSize': [60, 60]
+                                  },
+                                  'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [-73.9896398748536, 40.6689661515277]
+                                  }
+                                },
+                                  {
+                                  'type': 'Feature',
+                                  'properties': {
+                                    'name': 'Blanca',
+                                    'jobTitle': 'The Boss',
+                                    'imageUrl': 'https://i.imgur.com/gMYeFjM_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                    'borough': 'East Williamsbure',
+                                    'streetAddress': '780 Metropolitan Ave',
+                                    'shop': 'Royal Deli',
+                                    'hunterOrGatherer': '8.5',
+                                    'gender': 'She',
+                                    'iconSize': [60, 60]
+                                  },
+                                  'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [-73.9428075585951, 40.7145839422874]
+                                  }
+                                },
+                                  {
+                                  'type': 'Feature',
+                                  'properties': {
+                                  'name':'Charlie',
+                                  'jobTitle':'Doorman',
+                                  'borough':'Sunnyside',
+                                  'streetAddress':'45-17 Greenpoint Ave',
+                                  'shop':'Flowers by Giorgie',
+                                  'hunterOrGatherer':'5',
+                                  'gender':'male',
+                                  'imageUrl':'https://i.imgur.com/2bGylgk_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                  'iconSize': [60, 60]
+                                  },
+                                  'geometry': {
+                                     'type': 'Point',
+                                     'coordinates':  [-73.9192178625526, 40.7422377788936]
+                                   }
+                                 },
+                                  {
+                                  'type': 'Feature',
+                                  'properties': {
+                                  'name':'Luna',
+                                  'jobTitle':'Resident Chonk',
+                                  'borough':'Woodside',
+                                  'streetAddress':'47-60 45th St',
+                                  'shop':'Bombom Deli Grocery',
+                                  'hunterOrGatherer':'2',
+                                  'gender':'female',
+                                  'imageUrl':'https://i.imgur.com/mvmIC6b_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                  'iconSize': [60, 60]
+                                  },
+                                  'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [-73.9204908705575, 40.7395743436653]
+                                  }
+                                },
+                                 {
+                                'type': 'Feature',
+                                 'properties': {
+                                   'name':'Martinez',
+                                   'jobTitle':'Certified Muncher',
+                                   'borough':'East Harlem',
+                                   'streetAddress':'315 Pleasant Ave',
+                                   'shop':'315 Finest Foods',
+                                   'hunterOrGatherer':'10',
+                                   'gender':'female',
+                                   'imageUrl':'https://i.imgur.com/S3byoML_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                   'iconSize': [60, 60]
+                                 },
+                                 'geometry': {
+                                   'type': 'Point',
+                                   'coordinates': [-73.9329270738468, 40.7957009693295]
+                                 }
+                               },
+                                {
+                                'type': 'Feature',
+                                'properties': {
+                                  'name':'Katrina ',
+                                  'jobTitle':'Resident Diva',
+                                  'borough':'Gowanus',
+                                  'streetAddress':'246 11th St',
+                                  'shop':'4th Ave Convenience',
+                                  'hunterOrGatherer':'8',
+                                  'gender':'female',
+                                  'imageUrl':'https://i.imgur.com/l0rZyqT_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                  'iconSize': [60, 60]
+                                },
+                                'geometry': {
+                                  'type': 'Point',
+                                  'coordinates': [-73.9896243049035, 40.6689884599606]
+                                }
+                              },
+                               {'type': 'Feature',
+                               'properties': {
+                                 'name':'Oreo',
+                                 'jobTitle':'Stock Room Manager',
+                                 'borough':'Hell\'s Kitchen',
+                                 'streetAddress':'400B W 42nd St',
+                                 'shop':'Choithrams NY',
+                                 'hunterOrGatherer':'2',
+                                 'gender':'male',
+                                 'imageUrl':'https://i.imgur.com/56Goozp_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                 'iconSize': [60, 60]
+                               },
+                               'geometry': {
+                                 'type': 'Point',
+                                 'coordinates': [-73.9929600259570, 40.7584008306833]
+                               }
+                             },
+                              {
+                              'type': 'Feature',
+                              'properties': {
+                                'name':'Benito',
+                                'jobTitle':'The Boss',
+                                'borough':'Crown Heights',
+                                'streetAddress':'98 Montgomery St',
+                                'shop':'Es Wholesome Foods Natural & Organic Products Deli-Grocery Etc.',
+                                'hunterOrGatherer':'3.5',
+                                'gender':'male',
+                                'imageUrl':'https://i.imgur.com/qncBMpr_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                                'iconSize': [60, 60]
+                              },
+                              'geometry': {
+                                'type': 'Point',
+                                'coordinates': [-73.9614073657511, 40.6665759745470]
+                              }
+                            },
+                             {
+                             'type': 'Feature',
+                             'properties': {
+                               'name':'Luna',
+                               'jobTitle':'Floor Manager',
+                               'borough':'Chelsea',
+                               'streetAddress':'106 W 28th St',
+                               'shop':'Tropical Plants And Orchids Inc',
+                               'hunterOrGatherer':'9',
+                               'gender':'female',
+                               'imageUrl':'https://i.imgur.com/t1jMeyU_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                               'iconSize': [60, 60]
+                             },
+                             'geometry': {
+                               'type': 'Point',
+                               'coordinates': [-73.9910908852787, 40.7462005301017]
+                             }
+                           },
+                            {
+                            'type': 'Feature',
+                            'properties': {
+                              'name':'Simba',
+                              'jobTitle':'King of the Jungle ',
+                              'borough':'Crown Heights',
+                              'streetAddress':'613 Nostrand Ave',
+                              'shop':'613 Fresh Deli and Grocery 1',
+                              'hunterOrGatherer':'9',
+                              'gender':'male',
+                            'imageUrl':'https://i.imgur.com/w1XUDXu_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                            'iconSize': [60, 60]
+                            },
+                            'geometry': {
+                              'type': 'Point',
+                              'coordinates': [-73.9497815751540, 40.6762592533339]
+                            }
+                          },
+                           {
+                           'type': 'Feature',
+                           'properties': {
+                             'name':'Emerson & Sushi',
+                             'jobTitle':'Professional Hugger & Escape Artist',
+                             'borough':'Bushwick',
+                             'streetAddress':'204 Irving Ave',
+                             'shop':'Octopus Records',
+                             'hunterOrGatherer':'0, 8',
+                             'gender':'males',
+                             'imageUrl':'https://i.imgur.com/pFbhZnE_d.jpeg?maxwidth=520&shape=thumb&fidelity=high',
+                             'iconSize': [60, 60]
+                           },
+                           'geometry': {
+                             'type': 'Point',
+                             'coordinates': [-73.9182733412336, 40.7010975387492]
+                           }
+                         },
+                          {
+                          'type': 'Feature',
+                          'properties': {
+                            'name':'Charger ',
+                            'jobTitle':'Floral Feline Manager',
+                            'borough':'Chelsea',
+                            'streetAddress':'156 W 28th St',
+                            'shop':'Mahir Floral & Event Designs',
+                            'hunterOrGatherer':'7',
+                            'gender':'female',
+                          'imageUrl':'https://i.imgur.com/KGnLpHO_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                          'iconSize': [60, 60]
+                          },
+                          'geometry': {
+                            'type': 'Point',
+                            'coordinates': [-73.9929669281890, 40.7468542806307]
+                          }
+                        },
+                         {
+                         'type': 'Feature',
+                         'properties': {
+                           'name':'Linda',
+                           'jobTitle':'Chief Scardey Cat',
+                           'borough':'Bushwick',
+                           'streetAddress':'201 Irving Ave',
+                           'shop':'Rico Deli Crocery',
+                           'hunterOrGatherer':'4.5',
+                           'gender':'female',
+                           'imageUrl':'https://i.imgur.com/2uKzNpX_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                           'iconSize': [60, 60]
+                         },
+                         'geometry': {
+                           'type': 'Point',
+                           'coordinates': [-73.9186085116512, 40.7015757457588]
+                         }
+                       },
+                        {
+                        'type': 'Feature',
+                        'properties': {
+                          'name':'XiXi',
+                          'jobTitle':'Sales Clerk',
+                          'borough':'Ridegwood',
+                          'streetAddress':'66-70 Fresh Pond Rd',
+                          'shop':'Wang 99¢ & Up Inc',
+                          'hunterOrGatherer':'10',
+                          'gender':'female',
+                          'imageUrl':'https://i.imgur.com/99Dku0j_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                          'iconSize': [60, 60]
+                        },
+                        'geometry': {
+                          'type': 'Point',
+                          'coordinates': [-73.8973701779785, 40.7066959220101]
+                        }
+                      },
+                       {
+                       'type': 'Feature',
+                       'properties': {
+                         'name':'Lionel',
+                         'jobTitle':'The Curious Clerk',
+                         'borough':'Greene Point',
+                         'streetAddress':'627 Manhattan Ave',
+                         'shop':'Manhattan Ave Organic Convenience',
+                         'hunterOrGatherer':'7',
+                         'gender':'male',
+                       'imageUrl':'https://i.imgur.com/2MvmH6l_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                       'iconSize': [60, 60]
+                       },
+                       'geometry': {
+                         'type': 'Point',
+                         'coordinates': [-73.9509866550384, 40.7238808165125]
+                       }
+                     },
+                      {
+                      'type': 'Feature',
+                      'properties': {
+                        'name':'Future',
+                        'jobTitle':'Toxic Queen',
+                        'borough':'Crown Heights',
+                        'streetAddress':'231 Kingston Ave',
+                        'shop':'City Pride Grocery & Deli',
+                        'hunterOrGatherer':'8',
+                        'gender':'female',
+                        'imageUrl':'https://i.imgur.com/17jtASX_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                        'iconSize': [60, 60]
+                      },
+                      'geometry': {
+                        'type': 'Point',
+                        'coordinates': [-73.9417008294425, 40.6722013195685]
+                      }
+                    },
+                     {
+                     'type': 'Feature',
+                     'properties': {
+                       'name':'Princesa',
+                       'jobTitle':'Crown Heights Royalty',
+                       'borough':'Crown Heights',
+                       'streetAddress':'248 Kingston Ave',
+                       'shop':'Dave\'s Organic Corp',
+                       'hunterOrGatherer':'7',
+                       'gender':'female',
+                       'imageUrl':'https://i.imgur.com/L5d3aFM_d.png?maxwidth=520&shape=thumb&fidelity=high',
+                       'iconSize': [60, 60]
+                     },
+                     'geometry': {
+                       'type': 'Point',
+                       'coordinates': [-73.9422131361822, 40.6710664045901]
+                     }
+         }
+       ]
+     };
+
+      // Function to check if two markers would overlap
+      function markersOverlap(coord1, coord2, pixelDistance = 70) {
+        const point1 = map.project(coord1);
+        const point2 = map.project(coord2);
+        const distance = Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+        return distance < pixelDistance;
+      }
+
+      // Function to adjust coordinates to prevent overlap
+      function adjustCoordinatesForOverlap(features) {
+        const adjustedFeatures = [...features];
+        const offsetIncrement = 0.001; // Small coordinate offset
+
+        for (let i = 0; i < adjustedFeatures.length; i++) {
+          for (let j = i + 1; j < adjustedFeatures.length; j++) {
+            const coord1 = adjustedFeatures[i].geometry.coordinates;
+            const coord2 = adjustedFeatures[j].geometry.coordinates;
+
+            if (markersOverlap(coord1, coord2)) {
+              // Apply a small offset to the second marker
+              const offsetX = (Math.random() - 0.5) * offsetIncrement * 2;
+              const offsetY = (Math.random() - 0.5) * offsetIncrement * 2;
+
+              adjustedFeatures[j].geometry.coordinates = [
+                coord2[0] + offsetX,
+                coord2[1] + offsetY
+              ];
+            }
+          }
+        }
+
+        return adjustedFeatures;
+      }
+      function parseRatings(ratingStr) {
+        if (!ratingStr || ratingStr.trim() === '') return [];
+        return ratingStr.split(',')
+          .map(r => parseFloat(r.trim()))
+          .filter(r => !isNaN(r) && r >= 0 && r <= 10);
+      }
+
+      // Function to create hunter/gatherer scale HTML
+      function createHunterGathererScale(ratings) {
+        let triangles = '';
+        ratings.forEach((rating, index) => {
+          const position = (rating / 10) * 100;
+          triangles += `
+            <div class="scale-triangle" style="left: ${position}%;" title="${rating}"></div>
+            <div class="rating-number" style="left: ${position}%;">${rating}</div>
+          `;
+        });
+
+        return `
+          <div class="hunter-gatherer-scale">
+            <strong>Hunter/Gatherer Scale:</strong>
+            <div class="scale-bar">
+              ${triangles}
+            </div>
+            <div class="scale-numbers">
+              <span>0</span>
+              <span>1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+              <span>5</span>
+              <span>6</span>
+              <span>7</span>
+              <span>8</span>
+              <span>9</span>
+              <span>10</span>
+            </div>
+            <div class="scale-labels">
+              <span style="color: #00aa00; font-weight: bold;">Gatherer</span>
+              <span style="color: #ff0000; font-weight: bold;">Hunter</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [-73.98, 40.75],
+        zoom: 10
+      });
+
+      // Add markers to the map after the map loads
+      map.on('load', () => {
+        // Adjust coordinates to prevent overlapping markers
+        const adjustedFeatures = adjustCoordinatesForOverlap(geojson.features);
+
+        for (const feature of adjustedFeatures) {
+          // Create a DOM element for each marker.
+          const el = document.createElement('div');
+          const width = feature.properties.iconSize[0];
+          const height = feature.properties.iconSize[1];
+          el.className = 'marker';
+
+          // Handle different image URL property names
+          const imageUrl = feature.properties.imageUrl || feature.properties.imageURL;
+          el.style.backgroundImage = `url(${imageUrl})`;
+          el.style.width = `${width}px`;
+          el.style.height = `${height}px`;
+          el.style.backgroundSize = '100%';
+
+          // Parse hunter/gatherer ratings
+          const hunterGathererValue = feature.properties.hunterOrGatherer || feature.properties.hunerOrGatherer || '0';
+          const ratings = parseRatings(hunterGathererValue);
+
+          // Handle job title property name variations
+          const jobTitle = feature.properties.jobTitle || feature.properties.jobTitile || 'Shop Cat';
+
+          // Create the popup for this specific marker
+          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+            `<h3 class="popup-title">${feature.properties.name}</h3>
+             <div class="popup-row">
+               <span class="popup-label">Job Title:</span>
+               <span class="popup-value">${jobTitle}</span>
+             </div>
+             <div class="popup-row">
+               <span class="popup-label">Neighborhood:</span>
+               <span class="popup-value">${feature.properties.borough}</span>
+             </div>
+             <div class="popup-row">
+               <span class="popup-label">Street Address:</span>
+               <span class="popup-value">${feature.properties.streetAddress}</span>
+             </div>
+             <div class="popup-row">
+               <span class="popup-label">Shop:</span>
+               <span class="popup-value">${feature.properties.shop}</span>
+             </div>
+             <div class="popup-row">
+               <span class="popup-label">She-line Or He-line?:</span>
+               <span class="popup-value">${feature.properties.gender}</span>
+             </div>
+             ${createHunterGathererScale(ratings)}`
+          );
+
+          el.addEventListener('click', () => {
+            popup.addTo(map);
+          });
+
+          // Make a marker for each feature and add it to the map
+          new mapboxgl.Marker(el)
+            .setLngLat(feature.geometry.coordinates)
+            .setPopup(popup)
+            .addTo(map);
+        }
+      });
+    </script>
+  </body>
+</html>
